@@ -239,9 +239,10 @@ func (fh *ForumHandler) AddPosts (ctx *fasthttp.RequestCtx) {
 	}
 	id, err := strconv.Atoi(slug)
 	if err != nil {
-		id, _= fh.fr.GetThreadIdBySlug(slug)
+		id, err= fh.fr.GetThreadIdBySlug(slug)
 	}
-	_, err = fh.fr.GetThreadInfo(id)
+	tr, err := fh.fr.GetThreadInfo(id)
+
 	if err != nil {
 		resp := domain.Response{Message: fmt.Sprintf("thread of id is missing %d", id)}
 		utils.Send(404, resp, ctx)
@@ -250,16 +251,11 @@ func (fh *ForumHandler) AddPosts (ctx *fasthttp.RequestCtx) {
 
 	posts := []domain.Post{}
 	err = json.Unmarshal(ctx.PostBody(), &posts)
-	if len(posts) == 0 || posts == nil {
+	if len(posts) == 0{
 		utils.Send(201, []domain.Post{}, ctx)
 		return
 	}
-
-	if err != nil {
-		utils.Send(500, err.Error(), ctx)
-		return
-	}
-	ps, err := fh.fr.AddPosts(id, posts)
+	ps, err := fh.fr.AddPosts(id, tr.Forum, posts)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
@@ -320,6 +316,7 @@ func (fh *ForumHandler) GetPosts (ctx *fasthttp.RequestCtx) {
 	}
 	posts, err := fh.fr.GetPosts(id, limit, since, sort, desc)
 	if err != nil {
+		fmt.Println(err.Error())
 		resp := domain.Response{Message: fmt.Sprintf("No thread of id %d", id)}
 		utils.Send(404, resp, ctx)
 		return

@@ -159,35 +159,36 @@ func (f *ForumRepository) GetThreadIdBySlug(slug string) (int, error) {
 	return int(newThread.Id), err
 }
 
-func (f *ForumRepository) AddPosts(id int, posts []domain.Post) ([]domain.Post, error) {
-	query := "INSERT INTO Posts (Parent, Author, Message, IsEdited, Forum, Thread, Created) VALUES"
+func (f *ForumRepository) AddPosts(id int, forumSlug string, posts []domain.Post) ([]domain.Post, error) {
+	query := "INSERT INTO Posts (Parent, Author, Message, Forum, Thread, Created) VALUES"
 	var values []interface{}
 	var valuesID []string
 	i := 1
 	newPosts := []domain.Post{}
-	thread, err := f.GetThreadInfo(id)
-	if err != nil {
-		return []domain.Post{},err
-	}
 	createdTime := time.Now().Format(time.RFC3339)
 	for _, element := range posts {
 		valuesID = append(valuesID, fmt.Sprintf(
-			"($%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-			i, i+1, i+2, i+3, i+4, i+5, i+6))
-		i += 7
-		values = append(values, element.Parent, element.Author, element.Message, element.IsEdited,
-			thread.Forum, id, createdTime)
+			"($%d, $%d, $%d, $%d, $%d, $%d)",
+			i, i+1, i+2, i+3, i+4, i+5))
+		i += 6
+		values = append(values, element.Parent, element.Author, element.Message,
+			forumSlug, id, createdTime)
 	}
 	query += strings.Join(valuesID[:], ",")
-	query +=	" RETURNING Id, Parent, Author, Message, IsEdited, Forum, Thread, Created"
+	query +=	" RETURNING Id, Parent, Author, Message, Forum, Thread, Created"
 	rows, err := f.dbm.Query(context.Background(),query, values...)
+	defer func() {
+		if rows != nil {
+			rows.Close()
+		}
+	}()
 	if err != nil {
 		return newPosts, err
 	}
 
 	for rows.Next() {
 		newPost := domain.Post{}
-		err := rows.Scan(&newPost.Id, &newPost.Parent, &newPost.Author, &newPost.Message, &newPost.IsEdited,
+		err := rows.Scan(&newPost.Id, &newPost.Parent, &newPost.Author, &newPost.Message,
 			&newPost.Forum, &newPost.Thread, &newPost.Created)
 		if err != nil {
 			return newPosts, err

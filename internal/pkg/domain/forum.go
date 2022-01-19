@@ -61,7 +61,7 @@ type ForumRepository interface {
 	GetThreads(slug string, since string, desc bool, limit int) ([]Thread, error)
 	CheckThreads(slug string) (bool, error)
 	GetThreadIdBySlug(slug string) (int, error)
-	AddPosts(id int, posts []Post)  ([]Post, error)
+	AddPosts(id int, forumSlug string, posts []Post) ([]Post, error)
 	GetPosts(id int, limit int, since int, sort string, desc bool) ([]Post, error)
 	GetThreadInfo(id int) (Thread, error)
 	UpdateThread(thread Thread) (Thread, error)

@@ -35,7 +35,7 @@ CREATE UNLOGGED TABLE Posts (
     Parent BIGINT DEFAULT 0,
     Author citext,
     Message TEXT,
-    IsEdited BOOLEAN,
+    IsEdited BOOLEAN DEFAULT FALSE,
     Forum citext,
     Thread BIGINT,
     CREATED TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -106,7 +106,6 @@ CREATE OR REPLACE FUNCTION forumCheckPost() RETURNS TRIGGER AS
             SELECT Thread from Posts WHERE Id = NEW.Parent INTO parentThread;
             IF NOT FOUND OR parentThread != NEW.thread THEN
                 RAISE EXCEPTION 'DIFFERENT PARENT' USING ERRCODE = '23505';
-                    -- this block raises the UniqueViolation ERRCODE, which leads to 409 on response
             end if;
         end if;
         -- update post count and paths
