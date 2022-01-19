@@ -28,7 +28,7 @@ CREATE UNLOGGED TABLE Threads (
     FOREIGN KEY (Forum) REFERENCES  Forum(Slug)
 );
 -- as slug is optional, and pgx cannot read null strings
-CREATE UNIQUE INDEX idx_unq_thread_slug ON Threads(Slug) WHERE TRIM(Slug) <> '';
+CREATE UNIQUE INDEX idx_unq_thread_slug ON Threads(Slug) WHERE Slug <> '';
 
 -- deleted fkey parent as the referencing is done by path and 0 violates constraints
 CREATE UNLOGGED TABLE Posts (
@@ -161,16 +161,12 @@ CREATE TRIGGER changeVote AFTER UPDATE
 --indexes
 --user -index nickame and email, lower and normal
 CREATE INDEX usersNicknameIndex ON users (Nickname);
-CREATE INDEX usersNicknameLowerIndex ON users (lower(Nickname));
 CREATE INDEX usersEmailIndex ON users (Email);
-CREATE INDEX usersEmail_LowerIndex ON users (lower(Email));
 --forum - index slug
-CREATE INDEX forumSlugIndex ON Forum (lower(Forum.Slug));
-CREATE INDEX forumSlug_LowerIndex ON Forum (lower(Forum.Slug));
+CREATE INDEX forumSlugIndex ON Forum (Forum.Slug);
 --threads
 CREATE INDEX threadSlugIndex ON Threads (Slug);
-CREATE INDEX threadSlugLowerIndex ON Threads (lower(Slug));
-CREATE INDEX threadForumLowerIndex ON Threads (lower(Forum));
+CREATE INDEX threadForumLowerIndex ON Threads (Forum);
 CREATE INDEX threadCreatedIndex ON Threads (Created);
 --posts indexing thread, path and parent, also order by's
 CREATE INDEX postThreadIndex ON Posts (Thread);
