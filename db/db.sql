@@ -101,12 +101,6 @@ CREATE OR REPLACE FUNCTION forumCheckPost() RETURNS TRIGGER AS
         parentThread BIGINT;
         parentTreeOrder BIGINT[];
     BEGIN
-        IF EXISTS(SELECT Nickname FROM users WHERE LOWER(Nickname) = LOWER(NEW.Author)) = false THEN
-            RAISE EXCEPTION 'ERR FOREIGN KEY VIOLATION' USING ERRCODE ='23503';
-        end if;
-        IF EXISTS(SELECT ID FROM Threads WHERE Threads.Id = NEW.Thread) = false THEN
-            RAISE EXCEPTION 'ERR FOREIGN KEY VIOLATION' USING ERRCODE ='23503';
-        end if;
         -- check post for parent of thread
         IF (NEW.Parent <> 0) THEN
             SELECT Thread from Posts WHERE Id = NEW.Parent INTO parentThread;

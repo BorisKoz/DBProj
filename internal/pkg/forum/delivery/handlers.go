@@ -239,12 +239,20 @@ func (fh *ForumHandler) AddPosts (ctx *fasthttp.RequestCtx) {
 	}
 	id, err := strconv.Atoi(slug)
 	if err != nil {
-		id, _ = fh.fr.GetThreadIdBySlug(slug)
+		id, _= fh.fr.GetThreadIdBySlug(slug)
 	}
-	var posts []domain.Post
+	_, err = fh.fr.GetThreadInfo(id)
+	if err != nil {
+		resp := domain.Response{Message: fmt.Sprintf("thread of id is missing %d", id)}
+		utils.Send(404, resp, ctx)
+		return
+	}
+
+	posts := []domain.Post{}
 	err = json.Unmarshal(ctx.PostBody(), &posts)
-	if len(posts) == 0 {
+	if len(posts) == 0 || posts == nil {
 		utils.Send(201, []domain.Post{}, ctx)
+		return
 	}
 
 	if err != nil {

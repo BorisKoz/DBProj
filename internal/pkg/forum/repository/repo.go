@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"repo/internal/pkg/domain"
+	"strings"
 	"time"
 )
 
@@ -159,18 +160,34 @@ func (f *ForumRepository) GetThreadIdBySlug(slug string) (int, error) {
 }
 
 func (f *ForumRepository) AddPosts(id int, posts []domain.Post) ([]domain.Post, error) {
-	query := "INSERT INTO Posts (Parent, Author, Message, IsEdited, Forum, Thread, Created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING Id, Parent, Author, Message, IsEdited, Forum, Thread, Created"
+	query := "INSERT INTO Posts (Parent, Author, Message, IsEdited, Forum, Thread, Created) VALUES"
+	var values []interface{}
+	var valuesID []string
+	i := 1
 	newPosts := []domain.Post{}
 	thread, err := f.GetThreadInfo(id)
 	if err != nil {
 		return []domain.Post{},err
 	}
 	createdTime := time.Now().Format(time.RFC3339)
-	for _,post := range posts {
-		newPost := domain.Post{}
-		row := f.dbm.QueryRow(context.Background(), query, post.Parent, post.Author, post.Message, post.IsEdited,
+	for _, element := range posts {
+		valuesID = append(valuesID, fmt.Sprintf(
+			"($%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+			i, i+1, i+2, i+3, i+4, i+5, i+6))
+		i += 7
+		values = append(values, element.Parent, element.Author, element.Message, element.IsEdited,
 			thread.Forum, id, createdTime)
-		err := row.Scan(&newPost.Id, &newPost.Parent, &newPost.Author, &newPost.Message, &newPost.IsEdited,
+	}
+	query += strings.Join(valuesID[:], ",")
+	query +=	" RETURNING Id, Parent, Author, Message, IsEdited, Forum, Thread, Created"
+	rows, err := f.dbm.Query(context.Background(),query, values...)
+	if err != nil {
+		return newPosts, err
+	}
+
+	for rows.Next() {
+		newPost := domain.Post{}
+		err := rows.Scan(&newPost.Id, &newPost.Parent, &newPost.Author, &newPost.Message, &newPost.IsEdited,
 			&newPost.Forum, &newPost.Thread, &newPost.Created)
 		if err != nil {
 			return newPosts, err
