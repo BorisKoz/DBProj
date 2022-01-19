@@ -166,7 +166,7 @@ CREATE INDEX usersEmailIndex ON users (Email);
 CREATE INDEX forumSlugIndex ON Forum (Forum.Slug);
 --threads
 CREATE INDEX threadSlugIndex ON Threads (Slug);
-CREATE INDEX threadForumLowerIndex ON Threads (Forum);
+CREATE INDEX threadForumIndex ON Threads (Forum);
 CREATE INDEX threadCreatedIndex ON Threads (Created);
 --posts indexing thread, path and parent, also order by's
 CREATE INDEX postThreadIndex ON Posts (Thread);
@@ -178,7 +178,7 @@ CREATE INDEX postCreatedIndex ON Posts (Created);
 CREATE INDEX postOrderOrder1OrderIdIndex ON Posts ((Posts.treeOrder[1]), (Posts.treeOrder), id);
 CREATE INDEX postOrderOrder1ThreadIndex ON Posts ((Posts.treeOrder[1]), Thread);
 --votes
-CREATE INDEX voteNicknameIndex ON votes (lower(Nickname), IdThread, Voice);
+CREATE INDEX voteNicknameIndex ON votes (Nickname, IdThread, Voice);
 --forumUser
 CREATE INDEX forumUsersNicknameIndex ON forumUsers (Nickname);
 CREATE INDEX forumUsersForumIndex ON forumUsers (Slug);

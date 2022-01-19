@@ -36,7 +36,7 @@ func (f *ForumRepository) AddForum(forum domain.Forum) (domain.Forum,error) {
 }
 
 func (f *ForumRepository) GetForum(slug string) (domain.Forum, error) {
-	query := "SELECT Title, Usr, Slug, Posts, Threads from Forum WHERE LOWER(slug)=LOWER($1)"
+	query := "SELECT Title, Usr, Slug, Posts, Threads from Forum WHERE slug=$1"
 	var forum domain.Forum
 	row:= f.dbm.QueryRow(context.Background(), query, slug)
 	err := row.Scan(&forum.Title, &forum.User, &forum.Slug, &forum.Posts, &forum.Threads)
@@ -52,12 +52,12 @@ func (f *ForumRepository) GetUsers(slug string, limit int, since string, desc bo
 		if since != "" {
 			query += fmt.Sprintf(" AND f.nickname < '%s' ", since)
 		}
-		query += " ORDER BY LOWER(u.nickname) desc "
+		query += " ORDER BY u.nickname desc "
 	} else {
 		if since != "" {
 			query += fmt.Sprintf(" AND f.nickname > '%s' ", since)
 		}
-		query +=  " ORDER BY LOWER(u.nickname) "
+		query +=  " ORDER BY u.nickname "
 	}
 	query += "LIMIT NULLIF($2, 0)"
 
@@ -95,7 +95,7 @@ func (f *ForumRepository) AddThread(thread domain.Thread) (domain.Thread, error)
 }
 
 func (f *ForumRepository) GetThreads(slug string, since string, desc bool, limit int) ([]domain.Thread, error) {
-	query := "SELECT Id, Title, Forum, Message, Author, Votes, Slug, Created FROM Threads  WHERE LOWER(forum) = LOWER($1) "
+	query := "SELECT Id, Title, Forum, Message, Author, Votes, Slug, Created FROM Threads  WHERE forum = $1 "
 	if desc {
 		if since != "" {
 			query += fmt.Sprintf(" AND created <= '%s' ", since)
@@ -127,14 +127,14 @@ func (f *ForumRepository) GetThreads(slug string, since string, desc bool, limit
 }
 
 func (f *ForumRepository) CheckThreads(slug string) (bool, error) {
-	query := "SELECT EXISTS(SELECT 1 FROM Threads WHERE LOWER(forum)=LOWER($1))"
+	query := "SELECT EXISTS(SELECT 1 FROM Threads WHERE forum=$1)"
 	notNull := false
 	err := f.dbm.QueryRow(context.Background(), query, slug).Scan(&notNull)
 	return notNull, err
 }
 
 func (f *ForumRepository) GetThreadIdBySlug(slug string) (int, error) {
-	query := "SELECT Id FROM Threads WHERE LOWER(slug) = LOWER($1)"
+	query := "SELECT Id FROM Threads WHERE slug = $1"
 	row := f.dbm.QueryRow(context.Background(), query, slug)
 	newThread := domain.Thread{}
 	err := row.Scan(&newThread.Id)
@@ -295,7 +295,7 @@ func (f *ForumRepository) VoteThread(vote domain.Vote) error {
 	return err
 }
 func (f *ForumRepository) UpdateVote(vote domain.Vote) error {
-	query:= "UPDATE Votes SET Voice = $1 WHERE IdThread = $2 AND LOWER(Nickname) = LOWER($3)"
+	query:= "UPDATE Votes SET Voice = $1 WHERE IdThread = $2 AND Nickname = $3"
 	_, err := f.dbm.Exec(context.Background(),query, vote.Voice, vote.IdThread, vote.Nickname)
 	return err
 }
