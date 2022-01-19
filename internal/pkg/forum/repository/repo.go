@@ -2,12 +2,14 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"repo/internal/pkg/domain"
 	"time"
 )
+
 
 
 type ForumRepository struct {
@@ -86,8 +88,16 @@ func (f *ForumRepository) AddThread(thread domain.Thread) (domain.Thread, error)
 	if err != nil {
 		return domain.Thread{}, err
 	}
-	row := f.dbm.QueryRow(context.Background(), query, thread.Title, forum.Slug, thread.Message, thread.Author, thread.Slug, thread.Created)
-	err = row.Scan(&newThread.Id, &newThread.Title, &newThread.Forum, &newThread.Message, &newThread.Author, &newThread.Votes, &newThread.Slug, &newThread.Created)
+	insert := &thread.Slug
+	if thread.Slug == "" {
+		insert = nil
+	}
+	row := f.dbm.QueryRow(context.Background(), query, thread.Title, forum.Slug, thread.Message, thread.Author, insert, thread.Created)
+	slug := sql.NullString{}
+	err = row.Scan(&newThread.Id, &newThread.Title, &newThread.Forum, &newThread.Message, &newThread.Author, &newThread.Votes, &slug, &newThread.Created)
+	if slug.Valid {
+		newThread.Slug = slug.String
+	}
 	if err != nil {
 		return domain.Thread{}, err
 	}
@@ -117,7 +127,11 @@ func (f *ForumRepository) GetThreads(slug string, since string, desc bool, limit
 	threads := []domain.Thread{}
 	for rows.Next() {
 		newThread := domain.Thread{}
-		err = rows.Scan(&newThread.Id, &newThread.Title, &newThread.Forum, &newThread.Message, &newThread.Author, &newThread.Votes, &newThread.Slug, &newThread.Created)
+		slug := sql.NullString{}
+		err = rows.Scan(&newThread.Id, &newThread.Title, &newThread.Forum, &newThread.Message, &newThread.Author, &newThread.Votes, &slug, &newThread.Created)
+		if slug.Valid {
+			newThread.Slug = slug.String
+		}
 		if err != nil {
 			return []domain.Thread{}, err
 		}
@@ -149,7 +163,6 @@ func (f *ForumRepository) AddPosts(id int, posts []domain.Post) ([]domain.Post, 
 	newPosts := []domain.Post{}
 	thread, err := f.GetThreadInfo(id)
 	if err != nil {
-		fmt.Println(err)
 		return []domain.Post{},err
 	}
 	createdTime := time.Now().Format(time.RFC3339)
@@ -269,7 +282,11 @@ func (f *ForumRepository) GetThreadInfo(id int) (domain.Thread, error) {
 	query := "SELECT Id, Title, Forum, Message, Author, Votes, Slug, Created  FROM threads Where ID = $1"
 	rows := f.dbm.QueryRow(context.Background(),query, id)
 	newThread := domain.Thread{}
-	err := rows.Scan(&newThread.Id, &newThread.Title, &newThread.Forum, &newThread.Message, &newThread.Author, &newThread.Votes, &newThread.Slug, &newThread.Created)
+	slug := sql.NullString{}
+	err := rows.Scan(&newThread.Id, &newThread.Title, &newThread.Forum, &newThread.Message, &newThread.Author, &newThread.Votes, &slug, &newThread.Created)
+	if slug.Valid {
+		newThread.Slug = slug.String
+	}
 	if err != nil {
 		return domain.Thread{}, err
 	}

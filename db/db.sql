@@ -22,13 +22,12 @@ CREATE UNLOGGED TABLE Threads (
     Message TEXT,
     Author citext,
     Votes BIGINT DEFAULT 0,
-    Slug citext,
+    Slug citext UNIQUE,
     Created TIMESTAMP WITH TIME ZONE DEFAULT now(),
     FOREIGN KEY (Author) REFERENCES users(Nickname),
     FOREIGN KEY (Forum) REFERENCES  Forum(Slug)
 );
 -- as slug is optional, and pgx cannot read null strings
-CREATE UNIQUE INDEX idx_unq_thread_slug ON Threads(Slug) WHERE Slug <> '';
 
 -- deleted fkey parent as the referencing is done by path and 0 violates constraints
 CREATE UNLOGGED TABLE Posts (
@@ -163,7 +162,7 @@ CREATE TRIGGER changeVote AFTER UPDATE
 CREATE INDEX usersNicknameIndex ON users (Nickname);
 CREATE INDEX usersEmailIndex ON users (Email);
 --forum - index slug
-CREATE INDEX forumSlugIndex ON Forum (Forum.Slug);
+CREATE INDEX forumSlugIndex ON Forum (Slug);
 --threads
 CREATE INDEX threadSlugIndex ON Threads (Slug);
 CREATE INDEX threadForumIndex ON Threads (Forum);

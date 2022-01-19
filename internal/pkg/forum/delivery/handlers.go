@@ -225,7 +225,6 @@ func (fh *ForumHandler) UpdateThread (ctx *fasthttp.RequestCtx) {
 	if err != nil {
 		resp := domain.Response{Message: fmt.Sprintf("Can't find threads of forum: %s", slug)}
 		utils.Send(404, resp, ctx)
-		fmt.Println(err.Error())
 		return
 	}
 	utils.Send(200, th, ctx)
@@ -262,8 +261,6 @@ func (fh *ForumHandler) AddPosts (ctx *fasthttp.RequestCtx) {
 				return
 			}
 		}
-		fmt.Println(err.Error())
-		fmt.Println("on id ", id)
 		resp := domain.Response{Message: fmt.Sprintf("thread of id is missing %d", id)}
 		utils.Send(404, resp, ctx)
 		return
@@ -336,7 +333,6 @@ func (fh *ForumHandler) GetPost (ctx *fasthttp.RequestCtx) {
 	related := string(ctx.QueryArgs().Peek("related"))
 	post, err := fh.fr.GetPost(domain.Post{Id: int64(id)}, strings.Split(related, ","))
 	if err != nil {
-		fmt.Println(err.Error())
 		resp := domain.Response{Message: fmt.Sprintf("No post of id %d", id)}
 		utils.Send(404, resp, ctx)
 		return
